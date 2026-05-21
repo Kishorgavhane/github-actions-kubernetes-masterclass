@@ -19,6 +19,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push backend
+        id: backend
         uses: docker/build-push-action@v7
         with:
           context: ./backend
@@ -28,6 +29,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/skillpulse-backend:${{ github.sha }}
 
       - name: Build and push frontend
+        id: frontend
         uses: docker/build-push-action@v7
         with:
           context: ./frontend
@@ -36,15 +38,14 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/skillpulse-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/skillpulse-frontend:${{ github.sha }}
 
-      - name: Docker image size report
+      - name: Image size report
         run: |
           echo "### Docker Image Sizes" >> $GITHUB_STEP_SUMMARY
-          echo "| Image | Size |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|------|" >> $GITHUB_STEP_SUMMARY
-          docker image inspect ${{ secrets.DOCKERHUB_USERNAME }}/skillpulse-backend:latest \
-            --format='| backend | {{.Size}} bytes |' >> $GITHUB_STEP_SUMMARY
-          docker image inspect ${{ secrets.DOCKERHUB_USERNAME }}/skillpulse-frontend:latest \
-            --format='| frontend | {{.Size}} bytes |' >> $GITHUB_STEP_SUMMARY
+          echo "| Image | Digest |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| backend | ${{ steps.backend.outputs.digest }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| frontend | ${{ steps.frontend.outputs.digest }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
 
       - name: Run Trivy scan - backend
         uses: aquasecurity/trivy-action@master
